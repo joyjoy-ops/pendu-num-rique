@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu du Pendu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo-pendu.png">
+    <style>
+        body {
+            /* Fond bleu clair avec câbles animés en fond */
+           background: linear-gradient(120deg, #456eb9 0%, #6e9bea 100%);
+            font-family: 'Montserrat', Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .container, .entry-container {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            padding: 40px 32px 32px 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            color: #2d3a4b;
+            margin-bottom: 16px;
+            font-size: 2.2em;
+        }
+        #pendu-drawing {
+            margin: 24px auto 16px auto;
+            width: 180px;
+            height: 180px;
+            background: none;
+        }
+        #mot {
+            font-size: 2em;
+            letter-spacing: 0.3em;
+            margin: 18px 0 24px 0;
+            color: #2d3a4b;
+        }
+        #lettres {
+            margin: 18px 0 0 0;
+        }
+        .lettre-btn {
+            background: #e3e9f7;
+            border: none;
+            border-radius: 6px;
+            margin: 4px;
+            padding: 10px 14px;
+            font-size: 1em;
+            color: #2d3a4b;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .lettre-btn:disabled {
+            background: #bfc9d9;
+            color: #fff;
+            cursor: not-allowed;
+        }
+        #message {
+            margin: 18px 0 0 0;
+            font-size: 1.1em;
+            color: #e74c3c;
+            min-height: 24px;
+        }
+        #restart {
+            margin-top: 24px;
+            background: #66a6ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 24px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #restart:hover, #play-btn:hover {
+            background: #4e8edb;
+        }
+        /* Styles pour la page d'entrée */
+        .entry-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+        #play-btn {
+            margin-top: 32px;
+            background: #66a6ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        /* Styles pour la boîte de dialogue */
+        #dialog-rejouer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #dialog-rejouer > div {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 16px 48px rgba(44,62,80,0.25), 0 2px 12px rgba(102,166,255,0.12);
+            padding: 40px 32px;
+            text-align: center;
+            max-width: 320px;
+            margin: auto;
+        }
+        #dialog-rejouer h2 {
+            color: #2d3a4b;
+            margin-bottom: 24px;
+        }
+        #dialog-rejouer button {
+            margin: 12px 16px 0 16px;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 2px 8px rgba(102,166,255,0.10);
+            outline: none;
+        }
+        #btn-oui {
+            background: linear-gradient(90deg, #66a6ff 0%, #89f7fe 100%);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(102,166,255,0.18);
+        }
+        #btn-oui:hover {
+            background: linear-gradient(90deg, #4e8edb 0%, #66a6ff 100%);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(102,166,255,0.22);
+        }
+        #btn-non {
+            background: linear-gradient(90deg, #e74c3c 0%, #ff7675 100%);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(231,76,60,0.13);
+        }
+        #btn-non:hover {
+            background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(231,76,60,0.18);
+        }
+        /* Écran de transition */
+        #mot-final {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(102,166,255,0.90);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #mot-final-label {
+            font-size: 2em;
+            color: #fff;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 500;
+            margin-bottom: 18px;
+            letter-spacing: 0.04em;
+        }
+        #mot-final-texte {
+            font-size: 3.5em;
+            color: #fff;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-shadow: 0 4px 24px rgba(44,62,80,0.25);
+            background: rgba(44,62,80,0.10);
+            border-radius: 24px;
+            padding: 32px 48px;
+            display: inline-block;
+        }
+        #mot-final-definition {
+            margin-top: 32px;
+            font-size: 1.3em;
+            color: #fff;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 400;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Styles pour la page Réalisateur */
+        #page-realisateur {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* Fond transparent + léger dégradé pour lisibilité, laisse voir l'animation SVG */
+            background: linear-gradient(120deg, rgba(143,207,255,0.80) 0%, rgba(102,166,255,0.70) 100%);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        #page-realisateur > div {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(44,62,80,0.18);
+            padding: 48px 36px 36px 36px;
+            text-align: center;
+            max-width: 440px;
+            margin: auto;
+            position: relative;
+        }
+        #page-realisateur h2 {
+            color: #2d3a4b;
+            margin-bottom: 18px;
+            margin-top: 48px;
+            font-size: 2em;
+            letter-spacing: 0.04em;
+        }
+        #page-realisateur p {
+            font-size: 1.18em;
+            color: #2d3a4b;
+            margin-bottom: 32px;
+        }
+        #page-realisateur ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 28px 0;
+        }
+        #page-realisateur ul li {
+            font-size: 1.13em;
+            color: #2980b9;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        #page-realisateur div.info {
+            font-size: 1.08em;
+            color: #2d3a4b;
+            margin-bottom: 18px;
+        }
+        #page-realisateur div.annee {
+            font-size: 0.98em;
+            color: #bfc9d9;
+            margin-bottom: 8px;
+        }
+        #btn-retour-accueil {
+            margin-top: 18px;
+            background: linear-gradient(90deg, #66a6ff 0%, #89f7fe 100%);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 32px;
+            font-size: 1.08em;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(102,166,255,0.10);
+        }
+
+        /* Styles pour l'animation circuit imprimé sur tout l'écran */
+        #cables-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            min-width: 100vw;
+            min-height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(1.2px) opacity(0.7);
+        }
+        #cables-bg path {
+            animation: cableAnim 6s linear infinite;
+        }
+        @keyframes cableAnim {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+        }
+    </style>
+</head>
+<body>
+    <svg id="cables-bg" width="100vw" height="100vh" viewBox="0 0 1920 1080" preserveAspectRatio="none" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;filter:blur(2.5px) opacity(0.7);">
+        <defs>
+            <linearGradient id="circuitGrad1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#66a6ff"/>
+                <stop offset="100%" stop-color="#00fff7"/>
+            </linearGradient>
+            <linearGradient id="circuitGrad2" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00b894"/>
+                <stop offset="100%" stop-color="#66a6ff"/>
+            </linearGradient>
+            <filter id="circuitGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+        <!-- Traces principales du circuit (prolongées et espacées) -->
+        <polyline points="0,120 300,120 400,320 700,320 700,520 1100,520 1100,820 1500,820 1500,1020 1920,970" stroke="url(#circuitGrad1)" stroke-width="8" fill="none" filter="url(#circuitGlow)">
+            <animate attributeName="stroke" values="url(#circuitGrad1);#00fff7;url(#circuitGrad1)" dur="8s" repeatCount="indefinite"/>
+        </polyline>
+        <polyline points="0,400 500,400 900,600 1300,600 1300,800 1920,820" stroke="url(#circuitGrad2)" stroke-width="6" fill="none" filter="url(#circuitGlow)">
+            <animate attributeName="stroke" values="url(#circuitGrad2);#66a6ff;url(#circuitGrad2)" dur="10s" repeatCount="indefinite"/>
+        </polyline>
+        <polyline points="0,900 500,900 500,700 1000,700 1000,400 1600,400 1600,200 1920,220" stroke="#00fff7" stroke-width="5" fill="none" filter="url(#circuitGlow)">
+            <animate attributeName="stroke" values="#00fff7;#66a6ff;#00fff7" dur="12s" repeatCount="indefinite"/>
+        </polyline>
+        <polyline points="1920,200 1700,500 1300,500 1300,900 700,900 700,1080 0,1080" stroke="#66a6ff" stroke-width="4" fill="none" filter="url(#circuitGlow)">
+            <animate attributeName="stroke" values="#66a6ff;#00fff7;#66a6ff" dur="14s" repeatCount="indefinite"/>
+        </polyline>
+        <!-- Branches secondaires espacées -->
+        <polyline points="400,0 400,200 600,400" stroke="#b2bec3" stroke-width="3" fill="none" opacity="0.7"/>
+        <polyline points="1520,0 1520,400 1700,400" stroke="#b2bec3" stroke-width="3" fill="none" opacity="0.7"/>
+        <polyline points="0,700 400,700 600,900" stroke="#b2bec3" stroke-width="3" fill="none" opacity="0.7"/>
+        <polyline points="1920,900 1700,900 1500,1080" stroke="#b2bec3" stroke-width="3" fill="none" opacity="0.7"/>
+        <!-- Puces électroniques (plus nombreuses) -->
+        <rect x="290" y="390" width="20" height="20" fill="#222f3e" stroke="#00fff7" stroke-width="2" rx="4"/>
+        <rect x="890" y="790" width="24" height="24" fill="#222f3e" stroke="#66a6ff" stroke-width="2" rx="5"/>
+        <rect x="1490" y="690" width="18" height="18" fill="#222f3e" stroke="#00b894" stroke-width="2" rx="3"/>
+        <rect x="1190" y="390" width="18" height="18" fill="#222f3e" stroke="#00fff7" stroke-width="2" rx="3"/>
+        <rect x="400" y="890" width="16" height="16" fill="#222f3e" stroke="#66a6ff" stroke-width="2" rx="3"/>
+        <!-- Points de connexion (plus nombreux, certains clignotent) -->
+        <circle cx="300" cy="200" r="7" fill="#00fff7" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="600" cy="400" r="7" fill="#66a6ff" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="3.2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="900" cy="600" r="7" fill="#00fff7" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.1s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="1200" cy="800" r="7" fill="#66a6ff" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.8s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="1500" cy="700" r="7" fill="#00b894" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="400" cy="900" r="7" fill="#66a6ff" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.7s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="1190" cy="390" r="7" fill="#00fff7" filter="url(#circuitGlow)">
+            <animate attributeName="opacity" values="1;0.3;1" dur="2.9s" repeatCount="indefinite"/>
+        </circle>
+        <!-- Signaux lumineux animés (plusieurs sur différents chemins) -->
+        <circle r="10" fill="#00fff7">
+            <animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" path="M100,200 300,200 300,400 600,400 600,600 900,600 900,800 1200,800 1200,1000 1800,1000"/>
+        </circle>
+        <circle r="7" fill="#66a6ff">
+            <animateMotion dur="10s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" path="M400,100 400,300 700,300 700,500 1000,500 1000,700 1500,700"/>
+        </circle>
+        <circle r="6" fill="#00fff7">
+            <animateMotion dur="12s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" path="M200,900 400,900 400,700 800,700 800,400 1200,400 1200,200 1700,200"/>
+        </circle>
+        <circle r="5" fill="#66a6ff">
+            <animateMotion dur="14s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" path="M1720,100 1720,400 1500,400 1500,800 1100,800 1100,1000 300,1000"/>
+        </circle>
+    </svg>
+    <div class="entry-container" id="entry-container">
+        <h1>Bienvenue sur notre jeu du pendu!</h1>
+        <p style="font-size:1.15em;color:#2d3a4b;">Prêt à tester vos connaissances dans le domaine de l'informatique ?</p>
+        <input id="pseudo-input" type="text" maxlength="16" placeholder="Votre pseudo" style="margin-top:22px; font-size:1.08em; padding:10px 18px; border-radius:8px; border:1.5px solid #66a6ff; outline:none; font-family:'Montserrat',Arial,sans-serif; color:#2980b9; background:#f7fbff; width:80%; max-width:220px; box-sizing:border-box; text-align:center;">
+        <button id="play-btn" disabled>Jouer</button>
+        <button id="btn-realisateur" style="margin-top:18px; background:#e3e9f7; color:#2d3a4b; border:none; border-radius:6px; padding:10px 24px; font-size:1em; cursor:pointer; transition:background 0.2s;">Réalisateur</button>
+    </div>
+    <div class="container" id="game-container" style="display:none;">
+        <h1>Jeu du Pendu</h1>
+        <svg id="pendu-drawing" viewBox="0 0 180 180"></svg>
+        <div id="mot">_ _ _ _ _</div>
+        <div id="lettres"></div>
+        <div id="message"></div>
+        <button id="restart" style="display:none;">Rejouer</button>
+        <button id="btn-retour-jeu" style="position:absolute; top:18px; left:18px; z-index:3; background:#fff; color:#2980b9; border:2px solid #66a6ff; border-radius:8px; padding:8px 18px; font-size:1em; font-family:'Montserrat',Arial,sans-serif; font-weight:600; box-shadow:0 2px 8px rgba(102,166,255,0.10); cursor:pointer;">Retour</button>
+    </div>
+    <!-- Boîte de dialogue pour rejouer -->
+    <div id="dialog-rejouer" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:18px; box-shadow:0 16px 48px rgba(44,62,80,0.25), 0 2px 12px rgba(102,166,255,0.12); padding:40px 32px; text-align:center; max-width:320px; margin:auto;">
+            <h2 style="color:#2d3a4b; margin-bottom:24px;">Voulez-vous rejouer ?</h2>
+            <button id="btn-oui" style="margin:12px 16px 0 16px; background:#66a6ff; color:#fff; border:none; border-radius:6px; padding:10px 24px; font-size:1em; cursor:pointer; transition:background 0.2s;">Oui</button>
+            <button id="btn-non" style="margin:12px 16px 0 16px; background:#e74c3c; color:#fff; border:none; border-radius:6px; padding:10px 24px; font-size:1em; cursor:pointer; transition:background 0.2s;">Non</button>
+        </div>
+    </div>
+    <!-- Écran de transition pour afficher le mot en grand -->
+    <div id="mot-final" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(102,166,255,0.90); z-index:2000; align-items:center; justify-content:center;">
+        <div style="width:100vw; text-align:center;">
+            <div id="mot-final-label" style="font-size:2em; color:#fff; font-family:'Montserrat',Arial,sans-serif; font-weight:500; margin-bottom:18px; letter-spacing:0.04em;">Le mot était :</div>
+            <span id="mot-final-texte" style="font-size:3.5em; color:#fff; font-family:'Montserrat',Arial,sans-serif; font-weight:700; letter-spacing:0.15em; text-shadow:0 4px 24px rgba(44,62,80,0.25); background:rgba(44,62,80,0.10); border-radius:24px; padding:32px 48px; display:inline-block;"></span>
+            <div id="mot-final-definition" style="margin-top:32px; font-size:1.3em; color:#fff; font-family:'Montserrat',Arial,sans-serif; font-weight:400; max-width:600px; margin-left:auto; margin-right:auto;"></div>
+        </div>
+    </div>
+    <!-- Page Réalisateur (masquée par défaut) -->
+    <div id="page-realisateur" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%); z-index:3000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:24px; box-shadow:0 12px 40px rgba(44,62,80,0.18); padding:48px 36px 36px 36px; text-align:center; max-width:440px; margin:auto; position:relative;">
+            <div style="position:absolute; top:-36px; left:50%; transform:translateX(-50%); background:#66a6ff; width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(102,166,255,0.18);">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#fff"/></svg>
+            </div>
+            <h2 style="color:#2d3a4b; margin-bottom:18px; margin-top:48px; font-size:2em; letter-spacing:0.04em;">Réalisation</h2>
+            <p style="font-size:1.18em; color:#2d3a4b; margin-bottom:32px;">Jeu du pendu numérique réalisé par :</p>
+            <ul style="list-style:none; padding:0; margin:0 0 28px 0;">
+                <li style="font-size:1.13em; color:#2980b9; font-weight:600; margin-bottom:10px;">Joey Dillenseger<span style='color:#888; font-size:0.95em;'>(1ère année BTS SIO SISR)</span></li>
+                <li style="font-size:1.13em; color:#2980b9; font-weight:600; margin-bottom:10px;">Louis Logez<span style='color:#888; font-size:0.95em;'>(1ère année BTS SIO SISR)</span></li>
+                <li style="font-size:1.13em; color:#2980b9; font-weight:600; margin-bottom:10px;">Pierre-Olivier Lecocq<span style='color:#888; font-size:0.95em;'>(1ère année BTS SIO SISR)</span></li>
+                <li style="font-size:1.13em; color:#2980b9; font-weight:600; margin-bottom:10px;">Mickaël SEO <span style='color:#888; font-size:0.95em;'>(1ère année BTS SIO SLAM)</span></li>
+                <li style="font-size:1.13em; color:#2980b9; font-weight:600;">Fabrice GOVAN <span style='color:#888; font-size:0.95em;'>(1ère année BTS SIO SISR)</span></li>
+            </ul>
+            <div style="font-size:1.08em; color:#2d3a4b; margin-bottom:18px;">Étudiants en  <span style="color:#66a6ff; font-weight:600;">1ère année deBTS SIO au Lycée Dick Ukeiwe</span></div>
+            <div style="font-size:0.98em; color:#bfc9d9; margin-bottom:8px;">Année 2025</div>
+            <button id="btn-retour-accueil" style="margin-top:18px; background:linear-gradient(90deg, #66a6ff 0%, #89f7fe 100%); color:#fff; border:none; border-radius:30px; padding:12px 32px; font-size:1.08em; font-family:'Montserrat',Arial,sans-serif; font-weight:600; letter-spacing:0.05em; cursor:pointer; transition:background 0.2s, transform 0.15s, box-shadow 0.2s; box-shadow:0 2px 8px rgba(102,166,255,0.10);">Retour</button>
+        </div>
+    </div>
+    <!-- Container pour le scoreboard -->
+    <div id="scoreboard-container" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.10); z-index:2500; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:18px; box-shadow:0 8px 32px rgba(0,0,0,0.15); padding:40px 32px; text-align:center; max-width:340px; margin:auto;">
+            <h2 style="color:#2d3a4b; margin-bottom:18px;">Meilleurs temps</h2>
+            <ol id="scoreboard-list" style="font-size:1.15em; color:#2980b9; margin-bottom:18px;"></ol>
+            <button id="btn-fermer-scoreboard" style="background:#66a6ff; color:#fff; border:none; border-radius:6px; padding:10px 24px; font-size:1em; cursor:pointer; transition:background 0.2s;">Fermer</button>
+        </div>
+    </div>
+    <button id="btn-scoreboard" style="position:fixed; top:24px; right:24px; z-index:3001; background:#fff; color:#2980b9; border:2px solid #66a6ff; border-radius:8px; padding:8px 18px; font-size:1em; font-family:'Montserrat',Arial,sans-serif; font-weight:600; box-shadow:0 2px 8px rgba(102,166,255,0.10); cursor:pointer;">Scores</button>
+    <div id="chrono" style="position:absolute; top:18px; left:18px; font-size:1.1em; color:#66a6ff; font-family:'Montserrat',Arial,sans-serif; font-weight:600; background:rgba(255,255,255,0.85); border-radius:8px; padding:6px 16px; z-index:2; display:none;"></div>
+    <script>
+        // Liste de mots pour le jeu (moitié informatique, moitié cybersécurité, max 12 lettres)
+        const mots = [
+            // Informatique général
+            'ORDINATEUR', 'INTERNET', 'CLAVIER', 'ECRAN', 'SOURIS', 'LOGICIEL', 'RESEAU', 'DONNEES',
+            'CLOUD', 'SERVEUR', 'FICHIER', 'EMAIL', 'ROUTEUR', 'WIFI', 'TABLETTE', 'CODE', 'USB',
+            'PIXEL', 'ROBOT', 'BIT', 'OCTET', 'SCRIPT', 'UPLOAD', 'IMPRIMANTE', 'MONITEUR', 'SSD',
+            'LAPTOP', 'DESKTOP', 'BLOG', 'FORUM', 'VIDEO', 'AUDIO', 'COOKIE', 'FIBRE', 'MODEM',
+            'APP', 'DATA', 'SITE', 'LIEN', 'HTML', 'CSS', 'PYTHON', 'JAVA', 'PHP', 'SQL', 'API',
+            // Cybersécurité
+            'FIREWALL', 'ANTIVIRUS', 'MALWARE', 'SPAM', 'BACKUP', 'SECURITE', 'VPN', 'PHISHING',
+            'HACKER', 'SUPPORT', 'SESSION', 'AUTHENTIF', 'ENCRYPTION', 'DECRYPTION', 'PASSWORD',
+            'CAPTEUR', 'ADMIN', 'LOGIN', 'LOGS', 'SAUVEGARDE', 'RESILIENCE', 'RISQUE', 'CYBER',
+            'PRIVACY', 'BOUCLE', 'DOSSIER', 'VARIABLE', 'BOUCLE', 'CONNEXION', 'DECONNEXION',
+            'UTILISATEUR', 'INTERFACE', 'EXTENSION', 'FORMAT', 'PAGE', 'JSON', 'XML', 'GIT', 'PUSH',
+            'PULL', 'MERGE', 'DEBUG', 'TEST', 'BRANCHE', 'COMMIT', 'SESSION', 'TOKEN', 'CAPTCHA'
+        ];
+        // Dictionnaire des définitions pour chaque mot (adapté)
+        const definitions = {
+            'ORDINATEUR': "Appareil électronique capable de traiter des informations selon des instructions programmées.",
+            'INTERNET': "Réseau mondial reliant des millions d'ordinateurs pour échanger des données.",
+            'CLAVIER': "Périphérique d'entrée composé de touches permettant de saisir des caractères.",
+            'ECRAN': "Dispositif d'affichage visuel pour les ordinateurs et autres appareils.",
+            'SOURIS': "Périphérique de pointage permettant de déplacer un curseur à l'écran.",
+            'LOGICIEL': "Programme informatique permettant d'effectuer des opérations sur un ordinateur.",
+            'RESEAU': "Ensemble d'ordinateurs ou d'appareils connectés pour partager des ressources.",
+            'DONNEES': "Informations collectées, stockées ou traitées par un système informatique.",
+            'CLOUD': "Stockage et accès à des données et services via Internet plutôt que sur un appareil local.",
+            'SERVEUR': "Ordinateur ou programme fournissant des services à d'autres ordinateurs sur un réseau.",
+            'FICHIER': "Ensemble de données stockées sous un nom sur un support informatique.",
+            'EMAIL': "Message électronique envoyé via un réseau informatique.",
+            'ROUTEUR': "Appareil qui dirige le trafic de données entre différents réseaux informatiques.",
+            'WIFI': "Technologie permettant la connexion sans fil à un réseau informatique.",
+            'TABLETTE': "Appareil mobile à écran tactile, plus grand qu'un smartphone.",
+            'USB': "Norme de connexion permettant de relier des périphériques à un ordinateur.",
+            'PIXEL': "Plus petite unité d'une image affichée à l'écran.",
+            'BIT': "Unité de base de l'information en informatique, représentant un état binaire (0 ou 1).",
+            'OCTET': "Groupe de huit bits, utilisé comme unité de mesure de la quantité de données.",
+            'SCRIPT': "Programme ou morceau de code écrit dans un langage de script, généralement interprété.",
+            'UPLOAD': "Action d'envoyer un fichier depuis son ordinateur vers un serveur ou un autre ordinateur.",
+            'SSD': "Dispositif de stockage à état solide, plus rapide et plus fiable qu'un disque dur traditionnel.",
+            'LAPTOP': "Ordinateur portable, compact et léger, conçu pour être facilement transportable.",
+            'DESKTOP': "Ordinateur personnel destiné à un usage fixe, généralement plus puissant qu'un ordinateur portable.",
+            'FORUM': "Site web permettant aux utilisateurs de discuter et d'échanger des informations sur des sujets variés.",
+            'COOKIE': "Petit fichier stocké sur l'ordinateur d'un utilisateur par un site web, utilisé pour mémoriser des informations.",
+            'FIBRE': "Filament mince et flexible, souvent utilisé pour la transmission de données à haute vitesse.",
+            'MODEM': "Dispositif qui module et démodule les signaux numériques pour la transmission sur des lignes téléphoniques.",
+            'APP': "Application logicielle, souvent utilisée sur des appareils mobiles.",
+            'DATA': "Ensemble de valeurs, de faits ou d'informations, souvent stockées et traitées par des systèmes informatiques.",
+            'LIEN': "Référence permettant de relier une ressource à une autre, généralement sous forme d'URL.",
+            'HTML': "Langage de balisage utilisé pour créer des pages web.",
+            'CSS': "Langage de style utilisé pour décrire la présentation d'un document HTML.",
+            'PYTHON': "Langage de programmation interprété, polyvalent et largement utilisé.",
+            'JAVA': "Langage de programmation orienté objet, utilisé pour développer des applications multiplateformes.",
+            'PHP': "Langage de script côté serveur, principalement utilisé pour le développement web.",
+            'SQL': "Langage de requête structuré, utilisé pour interagir avec des bases de données relationnelles.",
+            'API': "Interface de programmation permettant à des applications de communiquer entre elles.",
+            // Cybersécurité
+            'FIREWALL': "Dispositif de sécurité qui contrôle le trafic réseau entrant et sortant.",
+            'ANTIVIRUS': "Logiciel conçu pour détecter et éliminer les virus informatiques.",
+            'MALWARE': "Logiciel malveillant conçu pour infiltrer, endommager ou perturber un système informatique.",
+            'SPAM': "Messages électroniques non sollicités, souvent envoyés en masse à des fins publicitaires.",
+            'BACKUP': "Copie de sauvegarde des données, réalisée pour prévenir la perte de données.",
+            'SECURITE': "Ensemble des mesures visant à protéger les systèmes et données informatiques.",
+            'VPN': "Réseau privé virtuel, utilisé pour sécuriser la connexion à Internet.",
+            'PHISHING': "Technique de fraude en ligne visant à obtenir des informations sensibles.",
+            'HACKER': "Personne qui utilise ses compétences en informatique pour contourner des systèmes de sécurité.",
+            'SUPPORT': "Aide fournie aux utilisateurs pour les aider à résoudre des problèmes techniques.",
+            'SESSION': "Période pendant laquelle un utilisateur est connecté à un service en ligne.",
+            'ENCRYPTION': "Méthode de protection des données en les rendant inaccessibles sans une clé.",
+            'DECRYPTION': "Processus de conversion des données chiffrées en données lisibles.",
+            'PASSWORD': "Mot de passe utilisé pour vérifier l'identité d'un utilisateur.",
+            'CAPTEUR': "Dispositif qui détecte et mesure des informations physiques pour les convertir en signaux numériques.",
+            'ADMIN': "Administrateur, personne responsable de la gestion d'un système informatique.",
+            'LOGIN': "Procédure d'identification d'un utilisateur sur un système.",
+            'LOGS': "Fichiers ou enregistrements retraçant les activités d'un système.",
+            'SAUVEGARDE': "Action de protéger des données en créant une copie de sauvegarde.",
+            'RESILIENCE': "Capacité d'un système à continuer de fonctionner malgré des incidents.",
+            'RISQUE': "Possibilité qu'une menace exploite une vulnérabilité.",
+            'CYBER': "Préfixe désignant tout ce qui concerne l'informatique et la sécurité numérique.",
+            'PRIVACY': "Protection de la vie privée et des données personnelles.",
+            'BOUCLE': "Structure de contrôle dans un programme qui répète une séquence d'instructions.",
+            'DOSSIER': "Conteneur virtuel pour organiser et stocker des fichiers sur un ordinateur.",
+            'VARIABLE': "Espace de stockage nommé dans un programme, utilisé pour contenir des données.",
+            'CONNEXION': "Établissement d'un lien entre deux ou plusieurs éléments pour permettre leur communication.",
+            'DECONNEXION': "Interruption d'une connexion, mettant fin à une session.",
+            'UTILISATEUR': "Personne qui utilise un ordinateur, un logiciel ou un service en ligne.",
+            'INTERFACE': "Point de contact entre deux systèmes, permettant leur interaction.",
+            'EXTENSION': "Partie d'un nom de fichier qui indique le type de fichier et le programme associé.",
+            'FORMAT': "Type ou structure d'un fichier ou d'une donnée.",
+            'PAGE': "Unité de contenu d'un site web.",
+            'GIT': "Système de contrôle de version distribué.",
+            'PUSH': "Envoi des modifications locales vers un dépôt distant.",
+            'PULL': "Récupération des dernières modifications d'un dépôt distant.",
+            'MERGE': "Fusion de deux branches ou plus dans un système de contrôle de version.",
+            'DEBUG': "Processus d'identification et de correction des erreurs dans un programme.",
+            'TEST': "Évaluation d'un programme ou d'un système pour s'assurer de son bon fonctionnement.",
+            'BRANCHE': "Version parallèle d'un projet dans un système de contrôle de version.",
+            'COMMIT': "Enregistrement des modifications apportées au code source.",
+            'TOKEN': "Jeton d'authentification ou d'accès dans un système sécurisé.",
+            'CAPTCHA': "Test pour différencier les humains des robots sur Internet."
+        };
+        let motSecret = '';
+        let lettresTrouvees = [];
+        let lettresRatees = [];
+        let maxErreurs = 7;
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+        const motDiv = document.getElementById('mot');
+        const lettresDiv = document.getElementById('lettres');
+        const messageDiv = document.getElementById('message');
+        const penduDrawing = document.getElementById('pendu-drawing');
+        const restartBtn = document.getElementById('restart');
+        const entryContainer = document.getElementById('entry-container');
+        const gameContainer = document.getElementById('game-container');
+        const playBtn = document.getElementById('play-btn');
+
+        let chronoInterval = null;
+        let chronoStart = null;
+        const chronoDiv = document.getElementById('chrono');
+        const scoreboardBtn = document.getElementById('btn-scoreboard');
+        const scoreboardContainer = document.getElementById('scoreboard-container');
+        const scoreboardList = document.getElementById('scoreboard-list');
+        const btnFermerScoreboard = document.getElementById('btn-fermer-scoreboard');
+
+        function choisirMot() {
+            motSecret = mots[Math.floor(Math.random() * mots.length)];
+            lettresTrouvees = [];
+            lettresRatees = [];
+        }
+
+        function afficherMot() {
+            motDiv.textContent = motSecret.split('').map(l => lettresTrouvees.includes(l) ? l : '_').join(' ');
+        }
+
+        function afficherLettres() {
+            lettresDiv.innerHTML = '';
+            alphabet.forEach(l => {
+                const btn = document.createElement('button');
+                btn.textContent = l;
+                btn.className = 'lettre-btn';
+                btn.disabled = lettresTrouvees.includes(l) || lettresRatees.includes(l) || motSecret.length === 0;
+                btn.onclick = () => jouerLettre(l);
+                lettresDiv.appendChild(btn);
+            });
+        }
+
+        function afficherMessage(msg, color = '#e74c3c') {
+            messageDiv.textContent = msg;
+            messageDiv.style.color = color;
+        }
+
+        function dessinerPendu(erreurs) {
+            penduDrawing.innerHTML = '';
+            if (erreurs > 0) penduDrawing.innerHTML += '<line x1="20" y1="170" x2="160" y2="170" stroke="#2d3a4b" stroke-width="6" />';
+            if (erreurs > 1) penduDrawing.innerHTML += '<line x1="60" y1="170" x2="60" y2="30" stroke="#2d3a4b" stroke-width="6" />';
+            if (erreurs > 2) penduDrawing.innerHTML += '<line x1="60" y1="30" x2="120" y2="30" stroke="#2d3a4b" stroke-width="6" />';
+            if (erreurs > 3) penduDrawing.innerHTML += '<line x1="120" y1="30" x2="120" y2="50" stroke="#2d3a4b" stroke-width="4" />';
+            if (erreurs > 4) penduDrawing.innerHTML += '<circle cx="120" cy="65" r="15" stroke="#2d3a4b" stroke-width="4" fill="none" />';
+            if (erreurs > 5) penduDrawing.innerHTML += '<line x1="120" y1="80" x2="120" y2="120" stroke="#2d3a4b" stroke-width="4" />';
+            if (erreurs > 6) {
+                penduDrawing.innerHTML += '<line x1="120" y1="120" x2="105" y2="150" stroke="#2d3a4b" stroke-width="4" />';
+                penduDrawing.innerHTML += '<line x1="120" y1="120" x2="135" y2="150" stroke="#2d3a4b" stroke-width="4" />';
+            }
+        }
+
+        function jouerLettre(lettre) {
+            if (motSecret.includes(lettre)) {
+                lettresTrouvees.push(lettre);
+                afficherMot();
+                if (motSecret.split('').every(l => lettresTrouvees.includes(l))) {
+                    afficherMessage('Bravo ! Vous avez gagné !', '#27ae60');
+                    finDePartie();
+                } else {
+                    afficherMessage('Bonne lettre !', '#2980b9');
+                }
+            } else {
+                lettresRatees.push(lettre);
+                dessinerPendu(lettresRatees.length);
+                if (lettresRatees.length >= maxErreurs) {
+                    afficherMot();
+                    afficherMessage('Perdu ! Le mot était : ' + motSecret, '#e74c3c');
+                    // Désactive tous les boutons de lettres immédiatement
+                    document.querySelectorAll('.lettre-btn').forEach(btn => btn.disabled = true);
+                    finDePartie();
+                    return;
+                } else {
+                    afficherMessage('Raté !', '#e67e22');
+                }
+            }
+            afficherLettres();
+        }
+
+        function startChrono() {
+            chronoStart = Date.now();
+            chronoDiv.style.display = 'block';
+            updateChrono();
+            chronoInterval = setInterval(updateChrono, 100);
+        }
+
+        function stopChrono() {
+            if (chronoInterval) clearInterval(chronoInterval);
+            chronoInterval = null;
+        }
+
+        function updateChrono() {
+            if (!chronoStart) return;
+            const ms = Date.now() - chronoStart;
+            chronoDiv.textContent = '⏱ ' + (ms/1000).toFixed(2) + ' s';
+        }
+
+        function resetChrono() {
+            stopChrono();
+            chronoDiv.style.display = 'block'; // Affiche le chrono même à la fin
+            chronoDiv.textContent = '⏱ 0.00 s'; // Affiche 0.00 s
+            chronoStart = null;
+        }
+
+        // Scoreboard (localStorage)
+        function getScores() {
+            // On filtre pour ne garder que les scores valides (pseudo non vide, temps numérique)
+            let scores = JSON.parse(localStorage.getItem('pendu_scores') || '[]');
+            return Array.isArray(scores) ? scores.filter(s => s && typeof s.pseudo === 'string' && s.pseudo && typeof s.time === 'number' && !isNaN(s.time)) : [];
+        }
+        function saveScore(timeMs) {
+            const pseudo = localStorage.getItem('pendu_pseudo') || 'Anonyme';
+            if (!pseudo || typeof timeMs !== 'number' || isNaN(timeMs) || timeMs <= 0) return;
+            let scores = getScores();
+            scores.push({ pseudo, time: timeMs });
+            scores = scores.sort((a, b) => a.time - b.time).slice(0, 5);
+            localStorage.setItem('pendu_scores', JSON.stringify(scores));
+        }
+        function showScoreboard() {
+            let scores = getScores();
+            // Nettoyage si jamais il y a des entrées invalides
+            if (scores.length > 0) {
+                localStorage.setItem('pendu_scores', JSON.stringify(scores));
+            }
+            scoreboardList.innerHTML = scores.length ? scores.map((s, i) => `<li><span style='color:#2d3a4b;font-weight:600;'>${s.pseudo}</span> — ${(s.time/1000).toFixed(2)} s</li>`).join('') : '<li>Aucun score</li>';
+            scoreboardContainer.style.display = 'flex';
+            scoreboardContainer.style.alignItems = 'center';
+            scoreboardContainer.style.justifyContent = 'center';
+        }
+        btnFermerScoreboard.onclick = ()=>{scoreboardContainer.style.display='none';};
+
+        function finDePartie() {
+            document.querySelectorAll('.lettre-btn').forEach(btn => btn.disabled = true);
+            stopChrono();
+            // Si victoire, sauvegarde le temps AVANT de resetChrono (pour garder chronoStart)
+            if (motSecret.split('').every(l => lettresTrouvees.includes(l))) {
+                if (chronoStart) saveScore(Date.now() - chronoStart);
+            }
+            resetChrono(); // Réinitialise et affiche 0.00 s
+            // Affiche le mot en grand au centre de l'écran avec le label et la définition
+            const motFinalDiv = document.getElementById('mot-final');
+            const motFinalTexte = document.getElementById('mot-final-texte');
+            const motFinalDef = document.getElementById('mot-final-definition');
+            motFinalTexte.textContent = motSecret;
+            motFinalDef.textContent = definitions[motSecret] || '';
+            motFinalDiv.style.display = 'flex';
+            setTimeout(() => {
+                motFinalDiv.style.display = 'none';
+                // Affiche la boîte de dialogue pour rejouer
+                document.getElementById('dialog-rejouer').style.display = 'flex';
+            }, 6000);
+        }
+
+        // Gestion des boutons de la boîte de dialogue
+        document.getElementById('btn-oui').onclick = function() {
+            document.getElementById('dialog-rejouer').style.display = 'none';
+            nouvellePartie();
+        };
+        document.getElementById('btn-non').onclick = function() {
+            document.getElementById('dialog-rejouer').style.display = 'none';
+            gameContainer.style.display = 'none';
+            entryContainer.style.display = 'flex';
+        };
+
+        function nouvellePartie() {
+            choisirMot();
+            afficherMot();
+            afficherLettres();
+            dessinerPendu(lettresRatees.length);
+            afficherMessage('');
+            resetChrono();
+            startChrono();
+            document.getElementById('dialog-rejouer').style.display = 'none';
+        }
+
+        restartBtn.onclick = nouvellePartie;
+        // Gestion de la page d'entrée
+        const pseudoInput = document.getElementById('pseudo-input');
+        playBtn.disabled = true;
+        pseudoInput.addEventListener('input', function() {
+            playBtn.disabled = !pseudoInput.value.trim();
+        });
+        playBtn.onclick = function() {
+            const pseudo = pseudoInput.value.trim();
+            if (!pseudo) return;
+            localStorage.setItem('pendu_pseudo', pseudo);
+            entryContainer.style.display = 'none';
+            gameContainer.style.display = 'block';
+            nouvellePartie();
+        };
+        // Gestion du bouton Réalisateur
+        const btnRealisateur = document.getElementById('btn-realisateur');
+        const pageRealisateur = document.getElementById('page-realisateur');
+        const btnRetourAccueil = document.getElementById('btn-retour-accueil');
+        btnRealisateur.onclick = function() {
+            entryContainer.style.display = 'none';
+            pageRealisateur.style.display = 'flex';
+        };
+        btnRetourAccueil.onclick = function() {
+            pageRealisateur.style.display = 'none';
+            entryContainer.style.display = 'flex';
+        };
+        const btnRetourJeu = document.getElementById('btn-retour-jeu');
+        btnRetourJeu.onclick = function() {
+            // Réinitialise l'état du jeu et retourne à l'accueil
+            gameContainer.style.display = 'none';
+            entryContainer.style.display = 'flex';
+            resetChrono();
+            // Optionnel : efface le dessin du pendu et le mot
+            motDiv.textContent = '';
+            penduDrawing.innerHTML = '';
+            messageDiv.textContent = '';
+            lettresDiv.innerHTML = '';
+        };
+        // Gestion du bouton Scores (scoreboard)
+        scoreboardBtn.onclick = showScoreboard;
+        btnFermerScoreboard.onclick = ()=>{scoreboardContainer.style.display='none';};
+        // Suppression des doublons inutiles (fin du script)
+    </script>
+</body>
+</html>
